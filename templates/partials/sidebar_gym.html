@@ -1,0 +1,195 @@
+{% load static %}
+
+<div class="sidebar">
+    <div class="sidebar-header">
+        <h4>BESTGMS</h4>
+        <p class="text-muted mb-0">
+            {% if user.role == 'system_admin' %}System Admin{% else %}Gym Owner{% endif %}
+        </p>
+    </div>
+    
+    <ul class="nav flex-column">
+        
+            <!-- Gym Owner Sidebar -->
+            <li class="nav-item">
+                <a class="nav-link {% if 'dashboard' in request.path %}active{% endif %}" href="{% url 'gym_dashboard' %}">
+                    <i class="fas fa-tachometer-alt me-2"></i> Dashboard
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if 'members' in request.path %}active{% endif %}" href="{% url 'member_list' %}">
+                    <i class="fas fa-users me-2"></i> Members
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if 'attendance' in request.path %}active{% endif %}" href="{% url 'record_attendance' %}">
+                    <i class="fas fa-clipboard-check me-2"></i> Attendance
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if 'invoices' in request.path %}active{% endif %}" href="{% url 'invoice_list' %}">
+                    <i class="fas fa-file-invoice me-2"></i> Invoices
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if 'visitors' in request.path %}active{% endif %}" href="{% url 'visitor_list' %}">
+                    <i class="fas fa-user-clock me-2"></i> Visitors
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if 'expenses' in request.path %}active{% endif %}" href="{% url 'expense_list' %}">
+                    <i class="fas fa-receipt me-2"></i> Expenses
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if 'reports' in request.path %}active{% endif %}" href="{% url 'financial_reports' %}">
+                    <i class="fas fa-chart-bar me-2"></i> Reports
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if 'renew' in request.path %}active{% endif %}" href="{% url 'renew_membership' member_id=0 %}">
+                    <i class="fas fa-sync-alt me-2"></i> Renew
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if 'share' in request.path %}active{% endif %}" href="{% url 'share_registration_link' %}">
+                    <i class="fas fa-share-alt me-2"></i> Share Link
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if 'staff' in request.path %}active{% endif %}" href="{% url 'staff_list' %}">
+                    <i class="fas fa-user-tie me-2"></i> Staff
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if 'notifications' in request.path %}active{% endif %}" href="{% url 'notifications' %}">
+                    <i class="fas fa-bell me-2"></i> Notifications
+                </a>
+            </li>
+        {% endif %}
+    </ul>
+</div>
+
+   <!-- User Info at Bottom -->
+    <div class="sidebar-footer p-3 mt-auto">
+        <div class="d-flex align-items-center">
+            <div class="avatar-sm me-2">
+                <span class="avatar-title rounded-circle bg-primary">
+                    {{ user.username|first|upper }}
+                </span>
+            </div>
+            <div class="flex-grow-1">
+                <h6 class="text-white mb-0">{{ user.username }}</h6>
+                <small class="text-muted">{{ user.email }}</small>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- CSS for Sidebar -->
+<style>
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: 250px;
+    z-index: 1000;
+    transition: all 0.3s;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.sidebar-header {
+    flex-shrink: 0;
+    border-bottom: 1px solid #495057;
+}
+
+.sidebar-content {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 0.5rem 0;
+}
+
+.sidebar-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.sidebar-content::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-content::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 3px;
+}
+
+.sidebar-content::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+.sidebar .nav-link {
+    color: #adb5bd;
+    padding: 0.75rem 1rem;
+    border-radius: 0.375rem;
+    margin: 0.125rem 0.5rem;
+    transition: all 0.15s ease-in-out;
+    white-space: nowrap;
+}
+
+.sidebar .nav-link:hover {
+    color: #fff;
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.sidebar .nav-link.active {
+    color: #fff;
+    background-color: #0d6efd;
+}
+
+.sidebar-divider {
+    border-color: #495057;
+    margin: 0.5rem 1rem;
+}
+
+.sidebar-footer {
+    flex-shrink: 0;
+    border-top: 1px solid #495057;
+}
+
+.avatar-title {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+    .sidebar {
+        margin-left: -250px;
+    }
+    
+    .sidebar.show {
+        margin-left: 0;
+    }
+}
+
+/* Main content adjustment */
+.main-content {
+    margin-left: 250px;
+    min-height: 100vh;
+    padding: 0;
+}
+
+@media (max-width: 768px) {
+    .main-content {
+        margin-left: 0;
+    }
+}
+</style>

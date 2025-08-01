@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        {% include 'partials/sidebar_system.html' %}
+
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+            <div class="d-flex justify-content-between align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <h2>Gyms Management</h2>
+                <a href="{% url 'add_gym' %}" class="btn btn-primary">Add Gym</a>
+            </div>
+
+            <!-- Filter Buttons -->
+            <div class="mb-3">
+                <a href="?status=active" class="btn btn-outline-success {% if status == 'active' %}active{% endif %}">Active</a>
+                <a href="?status=expiring" class="btn btn-outline-warning {% if status == 'expiring' %}active{% endif %}">Expiring</a>
+                <a href="?status=expired" class="btn btn-outline-danger {% if status == 'expired' %}active{% endif %}">Expired</a>
+            </div>
+
+            <!-- Search Form -->
+            <form method="get" class="mb-3 d-flex">
+                <input type="hidden" name="status" value="{{ status }}">
+                <input type="text" name="search" class="form-control me-2" placeholder="Search by gym name or owner..." value="{{ search_query }}">
+                <button type="submit" class="btn btn-secondary">Search</button>
+            </form>
+
+            <!-- Gyms Table -->
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>Gym Name</th>
+                            <th>Owner</th>
+                            <th>Email</th>
+                            <th>Status</th>
+                            <th>Expires On</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for gym in page_obj %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>{{ gym.name }}</td>
+                            <td>{{ gym.owner.username }}</td>
+                            <td>{{ gym.email }}</td>
+                            <td>
+                                {% if gym.expiry_date < today %}
+                                    <span class="badge bg-danger">Expired</span>
+                                {% elif gym.expiry_date <= today|add:"30" %}
+                                    <span class="badge bg-warning text-dark">Expiring</span>
+                                {% else %}
+                                    <span class="badge bg-success">Active</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ gym.expiry_date }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted">No gyms found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <nav>
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}&status={{ status }}&search={{ search_query }}">Previous</a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link">Previous</span></li>
+                    {% endif %}
+
+                    <li class="page-item disabled"><span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
+
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}&status={{ status }}&search={{ search_query }}">Next</a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link">Next</span></li>
+                    {% endif %}
+                </ul>
+            </nav>
+
+        </main>
+    </div>
+</div>
+{% endblock %}

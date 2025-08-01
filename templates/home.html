@@ -1,0 +1,117 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+        <a class="navbar-brand" href="{% url 'home' %}">
+            <img src="{% static 'images/logo.png' %}" alt="BESTGMS" height="40">
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item"><a class="nav-link" href="#features">Features</a></li>
+                <li class="nav-item"><a class="nav-link" href="#plans">Plans</a></li>
+                <li class="nav-item"><a class="nav-link" href="#about">About</a></li>
+                <li class="nav-item"><a class="nav-link" href="#contact">Contact</a></li>
+            </ul>
+            <div class="d-flex">
+                {% if user.is_authenticated %}
+                    <div class="dropdown">
+                        <button class="btn btn-primary dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown">
+                            <i class="fas fa-user me-1"></i> {{ user.username }}
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-user me-2"></i> Profile</a></li>
+                            <li><a class="dropdown-item" href="{% url 'dashboard_redirect' %}"><i class="fas fa-tachometer-alt me-2"></i> Dashboard</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{% url 'logout' %}"><i class="fas fa-sign-out-alt me-2"></i> Logout</a></li>
+                        </ul>
+                    </div>
+                {% else %}
+                    <a href="{% url 'login' %}" class="btn btn-outline-light me-2">Login</a>
+                    <a href="{% url 'register' %}" class="btn btn-primary">Sign Up</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</nav>
+
+<section class="hero-section py-5 text-center text-white">
+    <div class="container py-5">
+        <h1 class="display-4 fw-bold mb-4">Revolutionize Your Gym Management</h1>
+        <p class="lead mb-5">All-in-one solution for gym owners to manage memberships, attendance, payments, and more.</p>
+        <a href="#plans" class="btn btn-primary btn-lg px-4 me-2">Get Started</a>
+        <a href="#features" class="btn btn-outline-light btn-lg px-4">Learn More</a>
+    </div>
+</section>
+
+<section id="features" class="py-5 bg-light">
+    <div class="container py-5">
+        <h2 class="text-center mb-5">Powerful Features</h2>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow">
+                    <div class="card-body text-center p-4">
+                        <div class="feature-icon bg-primary mb-4">
+                            <i class="fas fa-users fa-3x text-white"></i>
+                        </div>
+                        <h3 class="h4 mb-3">Member Management</h3>
+                        <p class="mb-0">Easily manage all your members, track their memberships, and monitor attendance.</p>
+                    </div>
+                </div>
+            </div>
+            <!-- More feature cards -->
+        </div>
+    </div>
+</section>
+
+<section id="plans" class="py-5">
+    <div class="container py-5">
+        <h2 class="text-center mb-5">Choose Your Plan</h2>
+        <div class="row g-4">
+            {% for plan in plans %}
+            <div class="col-lg-4">
+                <div class="card plan-card h-100 border-0 shadow">
+                    <div class="card-header py-4 text-center">
+                        <h3 class="mb-0">{{ plan.name }}</h3>
+                        <div class="price mt-3">
+                            <span class="h1">${{ plan.price }}</span>
+                            <span class="text-muted">/month</span>
+                        </div>
+                    </div>
+                    <div class="card-body p-4">
+                        <ul class="list-unstyled mb-4">
+                            <li class="mb-2"><i class="fas fa-check text-success me-2"></i> {{ plan.gym_limit }} Gyms</li>
+                            <li class="mb-2"><i class="fas fa-check text-success me-2"></i> {{ plan.member_limit }} Members per Gym</li>
+                            <li class="mb-2"><i class="fas fa-check text-success me-2"></i> {{ plan.duration_days }} Days Duration</li>
+                        </ul>
+                        <div class="text-center mt-4">
+                            <a href="{% url 'register' %}?role=gym_owner" class="btn btn-primary w-100">Get Started</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<footer class="bg-dark text-white py-5">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-4 mb-4 mb-lg-0">
+                <h5>BESTGMS</h5>
+                <p class="text-muted">The ultimate gym management solution for fitness businesses of all sizes.</p>
+            </div>
+            <!-- Footer columns -->
+        </div>
+        <hr class="my-4">
+        <div class="text-center text-muted">
+            <p class="mb-0">&copy; 2023 BESTGMS. All rights reserved.</p>
+        </div>
+    </div>
+</footer>
+{% endblock %}

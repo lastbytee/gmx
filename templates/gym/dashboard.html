@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid">
+  <div class="row">
+    
+    <!-- Sidebar -->
+    <div class="col-md-3 col-lg-2 p-0">
+      {% include "partials/sidebar_gym.html" %}
+    </div>
+
+    <!-- Main Content -->
+    <div class="col-md-9 col-lg-10 py-4 px-4">
+      <h2 class="mb-4">Gym Dashboard</h2>
+      
+      <!-- Gym Stats Cards -->
+      <div class="row g-4">
+        <div class="col-md-4">
+          <div class="card shadow-sm border-0">
+            <div class="card-body">
+              <h5 class="card-title text-primary">Active Members</h5>
+              <p class="card-text fs-4">{{ active_members }}</p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-md-4">
+          <div class="card shadow-sm border-0">
+            <div class="card-body">
+              <h5 class="card-title text-warning">Expiring Soon</h5>
+              <p class="card-text fs-4">{{ expiring_members }}</p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-md-4">
+          <div class="card shadow-sm border-0">
+            <div class="card-body">
+              <h5 class="card-title text-danger">Inactive Members</h5>
+              <p class="card-text fs-4">{{ inactive_members }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Invoices and Expenses -->
+      <div class="row g-4 mt-4">
+        <div class="col-md-6">
+          <div class="card shadow-sm border-0">
+            <div class="card-body">
+              <h5 class="card-title">Recent Invoices</h5>
+              {% if invoices %}
+                <ul class="list-group list-group-flush">
+                  {% for invoice in invoices|slice:":5" %}
+                  <li class="list-group-item d-flex justify-content-between">
+                    <span>{{ invoice.date|date:"M d, Y" }}</span>
+                    <span class="text-success fw-bold">${{ invoice.amount }}</span>
+                  </li>
+                  {% endfor %}
+                </ul>
+              {% else %}
+                <p class="text-muted">No invoices found.</p>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <div class="card shadow-sm border-0">
+            <div class="card-body">
+              <h5 class="card-title">Recent Expenses</h5>
+              {% if expenses %}
+                <ul class="list-group list-group-flush">
+                  {% for expense in expenses|slice:":5" %}
+                  <li class="list-group-item d-flex justify-content-between">
+                    <span>{{ expense.description }}</span>
+                    <span class="text-danger fw-bold">${{ expense.amount }}</span>
+                  </li>
+                  {% endfor %}
+                </ul>
+              {% else %}
+                <p class="text-muted">No expenses recorded.</p>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}

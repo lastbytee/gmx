@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+  <div class="row">
+    
+    <!-- Sidebar -->
+    <div class="col-md-3 col-lg-2 d-none d-md-block bg-light sidebar">
+      {% include 'partials/sidebar_system.html' %}
+    </div>
+
+    <!-- Main Content -->
+    <div class="col-md-9 ms-sm-auto col-lg-10 px-md-4 mt-4">
+      <h2 class="mb-4">Paid Invoices</h2>
+
+      <!-- Search Form -->
+      <form method="get" class="row g-3 mb-4">
+        <div class="col-md-6">
+          <input type="text" name="search" value="{{ search_query }}" class="form-control" placeholder="Search invoices...">
+        </div>
+        <div class="col-md-3">
+          <button type="submit" class="btn btn-primary w-100">Search</button>
+        </div>
+      </form>
+
+      <!-- Invoices Table -->
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>Gym</th>
+              <th>Description</th>
+              <th>Amount</th>
+              <th>Date</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for invoice in page_obj %}
+            <tr>
+              <td>{{ invoice.gym.name }}</td>
+              <td>{{ invoice.description }}</td>
+              <td>{{ invoice.amount }} RWF</td>
+              <td>{{ invoice.date }}</td>
+              <td>
+                <span class="badge bg-success">Paid</span>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="5" class="text-center">No invoices found.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      <nav>
+        <ul class="pagination justify-content-center">
+          {% if page_obj.has_previous %}
+            <li class="page-item">
+              <a class="page-link" href="?page={{ page_obj.previous_page_number }}&search={{ search_query }}">&laquo;</a>
+            </li>
+          {% else %}
+            <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
+          {% endif %}
+
+          {% for num in page_obj.paginator.page_range %}
+            <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+              <a class="page-link" href="?page={{ num }}&search={{ search_query }}">{{ num }}</a>
+            </li>
+          {% endfor %}
+
+          {% if page_obj.has_next %}
+            <li class="page-item">
+              <a class="page-link" href="?page={{ page_obj.next_page_number }}&search={{ search_query }}">&raquo;</a>
+            </li>
+          {% else %}
+            <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
+          {% endif %}
+        </ul>
+      </nav>
+    </div>
+  </div>
+</div>
+{% endblock %}

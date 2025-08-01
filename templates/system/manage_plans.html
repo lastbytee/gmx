@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+  <div class="row">
+
+    <!-- Sidebar -->
+    <div class="col-md-3 col-lg-2 d-none d-md-block bg-light sidebar">
+      {% include 'partials/sidebar_system.html' %}
+    </div>
+
+    <!-- Main Content -->
+    <div class="col-md-9 ms-sm-auto col-lg-10 px-md-4 mt-4">
+
+      <h2 class="mb-4">Manage System Plans</h2>
+
+      <!-- Flash Messages -->
+      {% if messages %}
+        {% for message in messages %}
+          <div class="alert alert-success">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+
+      <!-- Add New Plan Form -->
+      <div class="card mb-5">
+        <div class="card-header">Create New Plan</div>
+        <div class="card-body">
+          <form method="post">
+            {% csrf_token %}
+            <div class="row g-3">
+              {% for field in form.visible_fields %}
+                <div class="col-md-6">
+                  <label class="form-label">{{ field.label }}</label>
+                  {{ field }}
+                  {% if field.errors %}
+                    <div class="text-danger small">{{ field.errors }}</div>
+                  {% endif %}
+                </div>
+              {% endfor %}
+              <div class="col-12">
+                <button type="submit" class="btn btn-primary">Add Plan</button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Existing Plans as Cards -->
+      <div class="row">
+        {% for plan in plans %}
+          <div class="col-md-6 col-xl-4 mb-4">
+            <div class="card h-100 shadow-sm border-0">
+              <div class="card-body">
+                <h5 class="card-title d-flex justify-content-between align-items-center">
+                  {{ plan.name }}
+                  <span class="badge 
+                    {% if plan.plan_type == 'basic' %}bg-secondary
+                    {% elif plan.plan_type == 'pro' %}bg-info
+                    {% elif plan.plan_type == 'elite' %}bg-warning text-dark
+                    {% else %}bg-dark text-light
+                    {% endif %}">
+                    {{ plan.get_plan_type_display }}
+                  </span>
+                </h5>
+                <h6 class="card-subtitle mb-2 text-muted">{{ plan.duration_days }} days • {{ plan.price }} RWF</h6>
+                <p class="card-text small">{{ plan.description|default:"No description provided." }}</p>
+                <ul class="list-group list-group-flush mb-3">
+                  <li class="list-group-item">Gym Limit: <strong>{{ plan.gym_limit }}</strong></li>
+                  <li class="list-group-item">Member Limit: <strong>{{ plan.member_limit }}</strong></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        {% empty %}
+          <div class="alert alert-secondary text-center">
+            No plans available.
+          </div>
+        {% endfor %}
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}

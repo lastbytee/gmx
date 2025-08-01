@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+{% include 'partials/sidebar_system.html' %}
+
+<div class="container-fluid mt-4" style="margin-left: 200px;">
+    <div class="row">
+        <div class="col-md-10 offset-md-1">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Financial Report</h5>
+                    <form class="d-flex" method="get">
+                        <div class="me-2">
+                            <input type="date" name="from" class="form-control form-control-sm"
+                                   value="{{ date_from|date:'Y-m-d' }}">
+                        </div>
+                        <div class="me-2">
+                            <input type="date" name="to" class="form-control form-control-sm"
+                                   value="{{ date_to|date:'Y-m-d' }}">
+                        </div>
+                        <button class="btn btn-light btn-sm" type="submit">Filter</button>
+                    </form>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-4 mb-3">
+                            <div class="bg-success text-white rounded py-3 shadow-sm">
+                                <h6>Total Income</h6>
+                                <h4>RWF {{ income|floatformat:0 }}</h4>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="bg-danger text-white rounded py-3 shadow-sm">
+                                <h6>Total Expenses</h6>
+                                <h4>RWF {{ expenses|floatformat:0 }}</h4>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="bg-info text-white rounded py-3 shadow-sm">
+                                <h6>Net Profit</h6>
+                                <h4>RWF {{ net_profit|floatformat:0 }}</h4>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="text-end">
+                        <small class="text-muted">
+                            Showing report from <strong>{{ date_from }}</strong> to <strong>{{ date_to }}</strong>
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

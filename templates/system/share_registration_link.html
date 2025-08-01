@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+  <div class="row">
+
+    <!-- Sidebar -->
+    <div class="col-md-3 col-lg-2 d-none d-md-block bg-light sidebar">
+      {% include 'partials/sidebar_system.html' %}
+    </div>
+
+    <!-- Main Content -->
+    <div class="col-md-9 ms-sm-auto col-lg-10 px-md-4 mt-4">
+      <h2 class="mb-4">Share Registration Link</h2>
+
+      <!-- Registration Link with Copy -->
+      <div class="card shadow-sm mb-4">
+        <div class="card-body">
+          <p class="mb-2">Use the link below to invite new gym owners to register:</p>
+          <div class="input-group mb-3">
+            <input type="text" class="form-control" id="regLink" value="{{ registration_link }}" readonly>
+            <button class="btn btn-outline-secondary" type="button" onclick="copyLink()">Copy</button>
+          </div>
+          <small class="text-muted">This link leads directly to the registration page.</small>
+        </div>
+      </div>
+
+      <!-- QR Code Display -->
+      <div class="card shadow-sm mb-4 text-center">
+        <div class="card-body">
+          <h5>Scan QR Code to open on mobile</h5>
+          <img src="data:image/png;base64,{{ qr_code_base64 }}" alt="QR Code" class="img-fluid" style="max-width:200px;">
+        </div>
+      </div>
+
+      <!-- Email Sharing Form -->
+      <div class="card shadow-sm mb-4">
+        <div class="card-body">
+          <h5 class="mb-3">Send Invitation via Email</h5>
+
+          {% if messages %}
+            {% for message in messages %}
+              <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-danger{% endif %}">
+                {{ message }}
+              </div>
+            {% endfor %}
+          {% endif %}
+
+          <form method="post" novalidate>
+            {% csrf_token %}
+            <div class="mb-3">
+              <label for="email" class="form-label">Recipient Email</label>
+              <input type="email" id="email" name="email" class="form-control" required placeholder="example@example.com">
+            </div>
+            <div class="mb-3">
+              <label for="message" class="form-label">Custom Message</label>
+              <textarea id="message" name="message" rows="4" class="form-control" placeholder="Write a custom message..."></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">Send Invitation</button>
+          </form>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+function copyLink() {
+  const input = document.getElementById("regLink");
+  input.select();
+  input.setSelectionRange(0, 99999); // For mobile
+  navigator.clipboard.writeText(input.value)
+    .then(() => {
+      alert("Link copied to clipboard!");
+    })
+    .catch(() => {
+      alert("Failed to copy link.");
+    });
+}
+</script>
+{% endblock %}
