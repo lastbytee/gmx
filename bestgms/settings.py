@@ -28,6 +28,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
+
 ]
 
 ROOT_URLCONF = 'bestgms.urls'
@@ -81,7 +83,19 @@ LOGOUT_REDIRECT_URL = 'home'
 
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = "bootstrap5"
+STATIC_URL = '/static/'
 
+# Add this:
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')  # or any desired folder
+
+# Optional but recommended in production
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),
+]
 # Email settings for notifications
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-DEFAULT_FROM_EMAIL = 'admin@bestgms.com'
+DEFAULT_FROM_EMAIL = 'unadjibu@bestgms.com'
+
+MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
+
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
