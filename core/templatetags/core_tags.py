@@ -1,7 +1,7 @@
 from django import template
 from datetime import date, timedelta
 
-from core.models import Gym
+from gym.models import Gym
 
 register = template.Library()
 

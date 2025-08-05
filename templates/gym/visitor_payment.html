@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Visitor Payment - {{ visitor.name }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-lg border-0 rounded-4">
+                <div class="card-header bg-primary text-white rounded-top-4">
+                    <h4 class="mb-0"><i class="bi bi-credit-card-2-front"></i> Visitor Payment</h4>
+                </div>
+
+                <div class="card-body">
+                    <div class="mb-4">
+                        <h5 class="fw-semibold">Visitor: {{ visitor.name }}</h5>
+                        <p class="mb-1 text-muted"><strong>Amount:</strong> {{ invoice.amount }} RWF</p>
+                        <p class="mb-0 text-muted"><strong>Invoice ID:</strong> {{ invoice.id }}</p>
+                    </div>
+
+                    <form id="payment-form">
+                        <div id="card-element" class="form-control mb-3"></div>
+                        <div id="card-errors" role="alert" class="text-danger mb-3"></div>
+                        <button id="submit" class="btn btn-success btn-lg shadow-sm w-100">
+                            <div class="spinner-border spinner-border-sm text-light" role="status" style="display: none;">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <span class="button-text"><i class="bi bi-wallet2"></i> Pay Now</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://js.stripe.com/v3/"></script>
+<script>
+    const stripe = Stripe('{{ stripe_publishable_key }}');
+    const elements = stripe.elements();
+    const cardElement = elements.create('card');
+    cardElement.mount('#card-element');
+
+    const form = document.getElementById('payment-form');
+    const submitButton = document.getElementById('submit');
+    const cardErrors = document.getElementById('card-errors');
+
+    form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        submitButton.disabled = true;
+        document.querySelector('.spinner-border').style.display = 'inline-block';
+        document.querySelector('.button-text').style.display = 'none';
+
+        const response = await fetch("{% url 'create_payment_intent' %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                'invoice_id': '{{ invoice.id }}'
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.error) {
+            cardErrors.textContent = data.error;
+            submitButton.disabled = false;
+            document.querySelector('.spinner-border').style.display = 'none';
+            document.querySelector('.button-text').style.display = 'inline-block';
+            return;
+        }
+
+        const { error, paymentIntent } = await stripe.confirmCardPayment(data.clientSecret, {
+            payment_method: {
+                card: cardElement,
+            }
+        });
+
+        if (error) {
+            cardErrors.textContent = error.message;
+            submitButton.disabled = false;
+            document.querySelector('.spinner-border').style.display = 'none';
+            document.querySelector('.button-text').style.display = 'inline-block';
+        } else {
+            if (paymentIntent.status === 'succeeded') {
+                const serverForm = document.createElement('form');
+                serverForm.method = 'POST';
+                serverForm.action = "{% url 'add_visitor' %}";
+                const csrfInput = document.createElement('input');
+                csrfInput.type = 'hidden';
+                csrfInput.name = 'csrfmiddlewaretoken';
+                csrfInput.value = '{{ csrf_token }}';
+                serverForm.appendChild(csrfInput);
+                const invoiceInput = document.createElement('input');
+                invoiceInput.type = 'hidden';
+                invoiceInput.name = 'invoice_id';
+                invoiceInput.value = '{{ invoice.id }}';
+                serverForm.appendChild(invoiceInput);
+                const nameInput = document.createElement('input');
+                nameInput.type = 'hidden';
+                nameInput.name = 'name';
+                nameInput.value = '{{ visitor.name }}';
+                serverForm.appendChild(nameInput);
+                const amountInput = document.createElement('input');
+                amountInput.type = 'hidden';
+                amountInput.name = 'amount';
+                amountInput.value = '{{ visitor.amount }}';
+                serverForm.appendChild(amountInput);
+                const paymentMethodInput = document.createElement('input');
+                paymentMethodInput.type = 'hidden';
+                paymentMethodInput.name = 'payment_method';
+                paymentMethodInput.value = '{{ visitor.payment_method.id }}';
+                serverForm.appendChild(paymentMethodInput);
+                document.body.appendChild(serverForm);
+                serverForm.submit();
+            }
+        }
+    });
+</script>
+{% endblock %}

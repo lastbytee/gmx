@@ -33,6 +33,7 @@ urlpatterns = [
     path('reports/', views.financial_reports, name='financial_reports'),
     
     # Staff
+    path('staff/dashboard/', views.staff_dashboard, name='staff_dashboard'),
     path('staff/', views.staff_list, name='staff_list'),
     path('staff/add/', views.create_staff, name='create_staff'),
     path('staff/<int:staff_id>/', views.staff_detail, name='staff_detail'),

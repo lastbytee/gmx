@@ -6,14 +6,12 @@
 <div class="container py-5">
     <div class="row justify-content-center">
         <div class="col-md-8">
-            <!-- Card -->
             <div class="card shadow-lg border-0 rounded-4">
                 <div class="card-header bg-primary text-white rounded-top-4">
                     <h4 class="mb-0"><i class="bi bi-credit-card-2-front"></i> Complete Your Payment</h4>
                 </div>
 
                 <div class="card-body">
-                    <!-- Gym Info -->
                     <div class="mb-4">
                         <h5 class="fw-semibold">Gym: {{ gym.name }}</h5>
                         <p class="mb-1 text-muted"><strong>Plan:</strong> {{ gym.system_plan.name }}</p>
@@ -21,36 +19,87 @@
                         <p class="mb-0 text-muted"><strong>Invoice ID:</strong> {{ invoice.id }}</p>
                     </div>
 
-                    <!-- Payment Form -->
-                    <form method="POST" class="mt-3">
-                        {% csrf_token %}
-                        <div class="mb-3">
-                            <label for="payment_method" class="form-label fw-semibold">Choose Payment Method</label>
-                               <select name="payment_method" id="payment_method" class="form-select" required>
-  <option value="" disabled selected>-- Select Payment Method --</option>
-  {% for method in payment_methods %}
-      <option value="{{ method.id }}">{{ method.get_name_display }}</option>
-  {% endfor %}
-</select>
-
-                        </div>
-
-                        <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-success btn-lg shadow-sm">
-                                <i class="bi bi-wallet2"></i> Pay Now
-                            </button>
-                            <a href="{% url 'gym_dashboard' %}" class="btn btn-outline-secondary">
-                                <i class="bi bi-arrow-left-circle"></i> Back to Dashboard
-                            </a>
-                        </div>
+                    <form id="payment-form">
+                        <div id="card-element" class="form-control mb-3"></div>
+                        <div id="card-errors" role="alert" class="text-danger mb-3"></div>
+                        <button id="submit" class="btn btn-success btn-lg shadow-sm w-100">
+                            <div class="spinner-border spinner-border-sm text-light" role="status" style="display: none;">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <span class="button-text"><i class="bi bi-wallet2"></i> Pay Now</span>
+                        </button>
                     </form>
-                </div>
-
-                <div class="card-footer text-muted text-end small">
-                    {{ gym.subscription_start|date:"M d, Y" }} – {{ gym.subscription_end|date:"M d, Y" }}
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<script src="https://js.stripe.com/v3/"></script>
+<script>
+    const stripe = Stripe('{{ stripe_publishable_key }}');
+    const elements = stripe.elements();
+    const cardElement = elements.create('card');
+    cardElement.mount('#card-element');
+
+    const form = document.getElementById('payment-form');
+    const submitButton = document.getElementById('submit');
+    const cardErrors = document.getElementById('card-errors');
+
+    form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        submitButton.disabled = true;
+        document.querySelector('.spinner-border').style.display = 'inline-block';
+        document.querySelector('.button-text').style.display = 'none';
+
+        const response = await fetch("{% url 'create_payment_intent' %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                'invoice_id': '{{ invoice.id }}'
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.error) {
+            cardErrors.textContent = data.error;
+            submitButton.disabled = false;
+            document.querySelector('.spinner-border').style.display = 'none';
+            document.querySelector('.button-text').style.display = 'inline-block';
+            return;
+        }
+
+        const { error, paymentIntent } = await stripe.confirmCardPayment(data.clientSecret, {
+            payment_method: {
+                card: cardElement,
+            }
+        });
+
+        if (error) {
+            cardErrors.textContent = error.message;
+            submitButton.disabled = false;
+            document.querySelector('.spinner-border').style.display = 'none';
+            document.querySelector('.button-text').style.display = 'inline-block';
+        } else {
+            if (paymentIntent.status === 'succeeded') {
+                // The payment has been processed!
+                // Now, submit the form to the server to update the gym status
+                const serverForm = document.createElement('form');
+                serverForm.method = 'POST';
+                serverForm.action = "{% url 'gym_payment' gym.id %}";
+                const csrfInput = document.createElement('input');
+                csrfInput.type = 'hidden';
+                csrfInput.name = 'csrfmiddlewaretoken';
+                csrfInput.value = '{{ csrf_token }}';
+                serverForm.appendChild(csrfInput);
+                document.body.appendChild(serverForm);
+                serverForm.submit();
+            }
+        }
+    });
+</script>
 {% endblock %}

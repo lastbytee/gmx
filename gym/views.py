@@ -6,7 +6,9 @@ from django.contrib import messages
 from datetime import timedelta, date
 from django.core.paginator import Paginator
 from core.forms import ExpenseForm, GymForm, GymPlanForm, InvoiceForm, MemberForm, StaffForm, VisitorForm
-from core.models import Attendance, Expense, Gym, Invoice, Member, Notification, PaymentMethod, Staff, Visitor
+from .models import Attendance, Expense, Gym, Invoice, Member, Staff, Visitor
+from core.models import Notification, PaymentMethod
+from .decorators import gym_owner_or_staff_required
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 from django.utils import timezone
@@ -145,8 +147,12 @@ def attendance_report(request):
     return render(request, 'gym/attendance_report.html', context)
 
 @login_required
+@gym_owner_or_staff_required('can_manage_finances')
 def invoice_list(request):
-    gym = get_object_or_404(Gym, owner=request.user)
+    if request.user.role == 'gym_owner':
+        gym = get_object_or_404(Gym, owner=request.user)
+    else:
+        gym = request.user.staff.gym
     invoices = gym.invoices.all().order_by('-date')
     
     # Search functionality
@@ -169,8 +175,12 @@ def invoice_list(request):
     return render(request, 'gym/invoice_list.html', context)
 
 @login_required
+@gym_owner_or_staff_required('can_manage_finances')
 def create_invoice(request):
-    gym = get_object_or_404(Gym, owner=request.user)
+    if request.user.role == 'gym_owner':
+        gym = get_object_or_404(Gym, owner=request.user)
+    else:
+        gym = request.user.staff.gym
     
     if request.method == 'POST':
         form = InvoiceForm(request.POST)
@@ -190,8 +200,12 @@ def create_invoice(request):
     return render(request, 'gym/create_invoice.html', context)
 
 @login_required
+@gym_owner_or_staff_required('can_manage_finances')
 def visitor_list(request):
-    gym = get_object_or_404(Gym, owner=request.user)
+    if request.user.role == 'gym_owner':
+        gym = get_object_or_404(Gym, owner=request.user)
+    else:
+        gym = request.user.staff.gym
     visitors = Visitor.objects.filter(gym=gym).order_by('-date')
     
     # Search functionality
@@ -211,8 +225,12 @@ def visitor_list(request):
     return render(request, 'gym/visitor_list.html', context)
 
 @login_required
+@gym_owner_or_staff_required('can_manage_finances')
 def expense_list(request):
-    gym = get_object_or_404(Gym, owner=request.user)
+    if request.user.role == 'gym_owner':
+        gym = get_object_or_404(Gym, owner=request.user)
+    else:
+        gym = request.user.staff.gym
     expenses = Expense.objects.filter(gym=gym).order_by('-date')
     
     # Search functionality
@@ -232,8 +250,12 @@ def expense_list(request):
     return render(request, 'gym/expense_list.html', context)
 
 @login_required
+@gym_owner_or_staff_required('can_manage_finances')
 def financial_reports(request):
-    gym = get_object_or_404(Gym, owner=request.user)
+    if request.user.role == 'gym_owner':
+        gym = get_object_or_404(Gym, owner=request.user)
+    else:
+        gym = request.user.staff.gym
     
     # Date range filtering
     date_from = request.GET.get('from', date.today().replace(day=1))
@@ -366,8 +388,13 @@ def send_member_notification(request, member_id):
     return render(request, 'gym/send_member_notification.html', context)
 
 
+@login_required
+@gym_owner_or_staff_required('can_register_members')
 def add_member(request):
-    gym = request.user.gym_set.first()  # Assuming one gym per owner
+    if request.user.role == 'gym_owner':
+        gym = get_object_or_404(Gym, owner=request.user)
+    else:
+        gym = request.user.staff.gym
     if not gym:
         return redirect('gym_dashboard')
     
@@ -394,13 +421,15 @@ def add_member(request):
     }
     return render(request, 'gym/add_member.html', context)
 
+from django.conf import settings
+
 # Renew Membership
 def renew_membership(request, member_id):
     member = get_object_or_404(Member, id=member_id, gym__owner=request.user)
     
     if request.method == 'POST':
-        # Process payment and extend membership
-        # This would be similar to the gym payment process
+        # This part will be handled by Stripe's webhook or client-side confirmation
+        # For now, we assume payment is successful and update the models
         member.is_active = True
         if 'duration' in member.plan.plan_type:
             member.expiry_date = timezone.now().date() + timedelta(days=member.plan.duration_days)
@@ -408,27 +437,37 @@ def renew_membership(request, member_id):
             member.sessions_remaining = member.plan.session_count
         member.save()
         
-        # Create renewal invoice
-        Invoice.objects.create(
-            gym=member.gym,
-            amount=member.plan.price,
-            payment_method=PaymentMethod.objects.get(name='cash'),
-            description=f"Renewal for {member.name}",
-            is_paid=True
-        )
+        invoice = Invoice.objects.get(id=request.POST.get('invoice_id'))
+        invoice.is_paid = True
+        invoice.save()
         
         messages.success(request, 'Membership renewed successfully!')
         return redirect('member_detail', member_id=member.id)
     
+    # Create a new invoice for the renewal
+    invoice = Invoice.objects.create(
+        gym=member.gym,
+        amount=member.plan.price,
+        payment_method=PaymentMethod.objects.get(name='card'), # Assume card payment
+        description=f"Renewal for {member.name}",
+        is_paid=False
+    )
+
     context = {
         'member': member,
-        'plan': member.plan
+        'invoice': invoice,
+        'stripe_publishable_key': settings.STRIPE_PUBLISHABLE_KEY
     }
-    return render(request, 'gym/renew_membership.html', context)
+    return render(request, 'gym/renew_payment.html', context)
 
 # Record Attendance
+@login_required
+@gym_owner_or_staff_required('can_manage_attendance')
 def record_attendance(request):
-    gym = request.user.gym_set.first()
+    if request.user.role == 'gym_owner':
+        gym = get_object_or_404(Gym, owner=request.user)
+    else:
+        gym = request.user.staff.gym
     if not gym:
         return redirect('gym_dashboard')
     
@@ -486,9 +525,31 @@ def add_visitor(request):
         if form.is_valid():
             visitor = form.save(commit=False)
             visitor.gym = gym
-            visitor.save()
-            messages.success(request, 'Visitor recorded successfully!')
-            return redirect('visitor_list')
+
+            # Create an invoice for the visitor
+            invoice = Invoice.objects.create(
+                gym=gym,
+                amount=visitor.amount,
+                payment_method=visitor.payment_method,
+                description=f"Visitor pass for {visitor.name}",
+                is_paid=False
+            )
+
+            # If payment is by card, redirect to payment page
+            if visitor.payment_method.name == 'card':
+                context = {
+                    'visitor': visitor,
+                    'invoice': invoice,
+                    'stripe_publishable_key': settings.STRIPE_PUBLISHABLE_KEY
+                }
+                return render(request, 'gym/visitor_payment.html', context)
+            else:
+                # For cash or other methods, mark as paid and save
+                invoice.is_paid = True
+                invoice.save()
+                visitor.save()
+                messages.success(request, 'Visitor recorded successfully!')
+                return redirect('visitor_list')
     else:
         form = VisitorForm()
     
@@ -558,3 +619,13 @@ def manage_plans(request):
     }
     return render(request, 'gym/manage_plans.html', context)
 
+@login_required
+def staff_dashboard(request):
+    staff = get_object_or_404(Staff, user=request.user)
+    gym = staff.gym
+
+    context = {
+        'staff': staff,
+        'gym': gym
+    }
+    return render(request, 'gym/staff_dashboard.html', context)

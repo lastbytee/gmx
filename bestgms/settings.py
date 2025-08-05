@@ -17,7 +17,7 @@ INSTALLED_APPS = [
     'core',
     'gym',
     'system',
-
+    'channels',
 ]
 
 MIDDLEWARE = [
@@ -93,9 +93,24 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
 ]
 # Email settings for notifications
+# In production, use a real email backend like SendGrid or Amazon SES
+# For example:
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+# EMAIL_HOST = 'smtp.sendgrid.net'
+# EMAIL_PORT = 587
+# EMAIL_USE_TLS = True
+# EMAIL_HOST_USER = 'apikey'
+# EMAIL_HOST_PASSWORD = 'SENDGRID_API_KEY'
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 DEFAULT_FROM_EMAIL = 'unadjibu@bestgms.com'
 
 MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
 
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+# Stripe settings
+STRIPE_PUBLISHABLE_KEY = 'pk_test_your_publishable_key'
+STRIPE_SECRET_KEY = 'sk_test_your_secret_key'
+
+# Channels settings
+ASGI_APPLICATION = 'bestgms.asgi.application'

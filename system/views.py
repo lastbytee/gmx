@@ -8,7 +8,9 @@ from datetime import timedelta, date
 from django.core.paginator import Paginator
 import qrcode
 from core.forms import GymForm, SystemPlanForm, SystemSettingsForm
-from core.models import Gym, Invoice, Expense, Notification, SystemPlan, SystemSetting, User
+from core.models import Notification, User
+from gym.models import Gym, Invoice, Expense
+from .models import SystemPlan, SystemSetting
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.core.mail import send_mail

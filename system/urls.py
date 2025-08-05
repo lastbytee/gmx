@@ -21,7 +21,7 @@ urlpatterns = [
     path('income/', views.income_report, name='income_report'),
     path('invoices/', views.invoice_list, name='invoice_list'),
     path('expenses/', views.expense_list, name='expense_list'),
-    path('reports/', views.financial_report, name='report'),
+    path('reports/', views.financial_report, name='financial_report'),
     
     # Registration Link
     path('share-link/', views.share_registration_link, name='share_registration_link'),

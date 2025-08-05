@@ -27,4 +27,5 @@ urlpatterns = [
     
     # Payment processing
     path('process-payment/', views.process_payment, name='process_payment'),
+    path('stripe/create-payment-intent/', views.create_payment_intent, name='create_payment_intent'),
 ]

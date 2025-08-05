@@ -4,8 +4,13 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+import stripe
+import json
+from django.conf import settings
 from django.http import JsonResponse
-from .models import Attendance,  Gym, Member, PaymentMethod, Invoice, Notification, Staff, SystemPlan
+from .models import PaymentMethod, Notification
+from gym.models import Attendance, Gym, Member, Invoice, Staff
+from system.models import SystemPlan
 from .forms import ExpenseForm, GymPlanForm, UserRegisterForm, UserLoginForm, GymForm, MemberForm, VisitorForm
 
 def home(request):
@@ -54,11 +59,37 @@ def user_logout(request):
     return redirect('home')
 
 @login_required
+def create_payment_intent(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            invoice_id = data.get('invoice_id')
+            invoice = get_object_or_404(Invoice, id=invoice_id)
+
+            stripe.api_key = settings.STRIPE_SECRET_KEY
+
+            intent = stripe.PaymentIntent.create(
+                amount=int(invoice.amount * 100),  # Amount in cents
+                currency='usd',
+                metadata={'invoice_id': invoice.id}
+            )
+
+            return JsonResponse({
+                'clientSecret': intent.client_secret
+            })
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=403)
+
+    return JsonResponse({'error': 'Invalid request'}, status=400)
+
+@login_required
 def dashboard_redirect(request):
     if request.user.role == 'system_admin':
         return redirect('system_dashboard')
     elif request.user.role == 'gym_owner':
         return redirect('gym_dashboard')
+    elif request.user.role == 'staff':
+        return redirect('staff_dashboard')
     return redirect('home')
 
 PENDING_PAYMENT_METHOD = 'pending'  # 🔒 Constant for safety
@@ -101,35 +132,26 @@ def gym_register(request):
 def gym_payment(request, gym_id):
     gym = get_object_or_404(Gym, id=gym_id, owner=request.user)
     invoice = gym.invoices.first()
-    payment_methods = PaymentMethod.objects.filter(is_active=True)
     
     if request.method == 'POST':
-        payment_method_id = request.POST.get('payment_method')
-        payment_method = get_object_or_404(PaymentMethod, id=payment_method_id)
-
-        invoice.payment_method = payment_method
-        
-        if payment_method.name.lower() in ['momo', 'card']:
-            # ✅ Simulate instant payment confirmation
-            invoice.is_paid = True
-            gym.is_active = True
-            gym.is_approved = True
-            gym.save()
-            messages.success(request, 'Payment successful! Your gym is now active.')
-        else:
-            # 🕐 Cash or delayed payment
-            invoice.is_paid = False
-            messages.info(request, 'Your payment is pending approval. You will be notified once approved.')
-        
+        # This part will be handled by Stripe's webhook or client-side confirmation
+        # For now, we assume payment is successful and update the models
+        invoice.is_paid = True
+        gym.is_active = True
+        gym.is_approved = True
         invoice.save()
+        gym.save()
+        messages.success(request, 'Payment successful! Your gym is now active.')
         return redirect('gym_dashboard')
-    
+
     context = {
         'gym': gym,
         'invoice': invoice,
-        'payment_methods': payment_methods
+        'stripe_publishable_key': settings.STRIPE_PUBLISHABLE_KEY
     }
     return render(request, 'gym/payment.html', context)
+
+from django.core.signing import Signer, BadSignature
 
 @login_required
 def scan_qr_attendance(request):
@@ -137,10 +159,9 @@ def scan_qr_attendance(request):
         qr_data = request.POST.get('qr_data')
         gym_id = request.POST.get('gym_id')
         
+        signer = Signer()
         try:
-            # In a real implementation, you would decrypt and verify the QR data
-            # For simplicity, we're using a dummy implementation
-            member_id = qr_data.split('_')[-1]  # Extract member ID
+            member_id = signer.unsign(qr_data)
             member = Member.objects.get(id=member_id, gym_id=gym_id)
             
             # Check if member is active
@@ -155,7 +176,7 @@ def scan_qr_attendance(request):
                 method='qr'
             )
             return JsonResponse({'status': 'success', 'member_name': member.name})
-        except Member.DoesNotExist:
+        except (Member.DoesNotExist, BadSignature):
             return JsonResponse({'status': 'error', 'message': 'Invalid QR code'})
     
     return JsonResponse({'status': 'error'}, status=400)

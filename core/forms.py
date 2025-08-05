@@ -1,7 +1,9 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 import pytz
-from .models import Invoice, PaymentMethod, SystemSetting, User, SystemPlan, Gym, GymPlan, Member, Visitor, Staff, Expense, Notification
+from .models import User, PaymentMethod, Notification
+from gym.models import Invoice, Gym, GymPlan, Member, Visitor, Staff, Expense
+from system.models import SystemSetting, SystemPlan
 
 class UserRegisterForm(UserCreationForm):
     role = forms.ChoiceField(

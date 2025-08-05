@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Staff Dashboard{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <h2 class="mb-4">Staff Dashboard</h2>
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Welcome, {{ staff.user.username }}</h5>
+                    <p class="card-text">
+                        <strong>Gym:</strong> {{ gym.name }}<br>
+                        <strong>Position:</strong> {{ staff.position }}
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Your Permissions</h5>
+                    <ul>
+                        {% if staff.can_register_members %}
+                            <li>Register Members</li>
+                        {% endif %}
+                        {% if staff.can_manage_attendance %}
+                            <li>Manage Attendance</li>
+                        {% endif %}
+                        {% if staff.can_manage_finances %}
+                            <li>Manage Finances</li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
